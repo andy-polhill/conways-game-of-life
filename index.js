@@ -54,7 +54,7 @@ function draw() {
   cells
     .forEach((row, x) => row.forEach((cell, y) => {
       if (cell) {
-        ctx.fillStyle = 'rgb(200, 0, 0)';
+        ctx.fillStyle = '#1cb500';
         ctx.fillRect(x * diameter, y * diameter, diameter, diameter);
       }
     }));  
