@@ -14,7 +14,7 @@ const plotter = canvas.getContext('2d');
 function update(cells) {
   plotter.clearRect(0, 0, width, width);
 
-  const next_cells = [];
+  const next_cells = new Array(width / diameter);
 
   for(let x = 0; x < cells.length; x++) { 
     let row = cells[x];
@@ -30,7 +30,7 @@ function update(cells) {
       ((cells[x + 1] && cells[x + 1][y]) ? cells[x + 1][y] : 0) +
       ((cells[x + 1] && cells[x + 1][y + 1]) ? cells[x + 1][y + 1] : 0);
 
-      if(!next_cells[x]) next_cells[x] = [];
+      if(!next_cells[x]) next_cells[x] = new Array(width / diameter);
 
       if((cell === 1 && (count === 3 || count === 2)) || (cell === 0 && count === 3)) {
         plotter.fillStyle = '#1cb500';
