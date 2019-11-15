@@ -1,5 +1,5 @@
-const width = 600;
-const diameter = 4;
+const width = 400;
+const diameter = 2;
 
 const canvas = document.getElementById('game');
 canvas.width = width;
@@ -9,12 +9,16 @@ const ctx = canvas.getContext('2d');
 const off_screen = document.createElement('canvas');
 off_screen.width = width;
 off_screen.height = width;
-const plotter = canvas.getContext('2d');
+const plotter = off_screen.getContext('2d');
 
-function update(cells) {
+let cells = Array
+.from({ length: width / diameter })
+.map(() => Array.from({ length: width / diameter })
+.map(() => Math.round(Math.random())));
+
+function main() {
   plotter.clearRect(0, 0, width, width);
-
-  const next_cells = new Array(width / diameter);
+  let next_cells = new Array(width / diameter);
 
   for(let x = 0; x < cells.length; x++) { 
     let row = cells[x];
@@ -42,17 +46,12 @@ function update(cells) {
     }
   }
 
+  // var imageData = plotter.getImageData(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, width, width);
   ctx.drawImage(off_screen, 0, 0);
-  return next_cells;
-}
-
-function main(cells) {  
-  const next = update(cells);
-  requestAnimationFrame(() => main(next));
+  cells = next_cells;
+  requestAnimationFrame(main);
 }
 
 // Start things off
-requestAnimationFrame(() => main(Array
-  .from({ length: width / diameter })
-  .map(() => Array.from({ length: width / diameter })
-  .map(() => Math.round(Math.random())))));
+requestAnimationFrame(main);
