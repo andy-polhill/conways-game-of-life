@@ -1,0 +1,33 @@
+{
+  "name": "conways-game-of-life",
+  "version": "1.0.0",
+  "description": "Just a bit of coding fun",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "npx jest index.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thatguynamedandy/conways-game-of-life.git"
+  },
+  "author": "andrew_polhill (http://twitter.com/andrew_polhill)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/thatguynamedandy/conways-game-of-life/issues"
+  },
+  "homepage": "https://github.com/thatguynamedandy/conways-game-of-life#readme",
+  "devDependencies": {
+    "eslint": "^6.6.0",
+    "jest": "^24.9.0"
+  },
+  "jest": {
+    "setupFilesAfterEnv": [
+      "./jest.setup.js"
+    ]
+  },
+  "dependencies": {
+    "canvas": "^2.6.0",
+    "lodash.split": "^4.4.2"
+  }
+}
