@@ -8,7 +8,6 @@ global.tick;
 
 global.requestAnimationFrame = (fn) => {
   global.tick = () => {
-    console.log('tick');
     fn();
   }
 }
