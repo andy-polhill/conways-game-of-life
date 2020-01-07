@@ -80,10 +80,10 @@ const game = ({
 
       if ((count === three_count) || (count === two_count && imageData.data[i] === 255)) {
         // console.log('survived 🐛');
-        data = data.concat([0, 0, 0, 255])
+        data.push([0, 0, 0, 255])
       } else {
+        data.push([0, 0, 0, 0])
         // console.log('died 🐛');
-        data = data.concat([0, 0, 0, 0])
       }
     }
 
