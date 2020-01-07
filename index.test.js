@@ -500,4 +500,45 @@ describe('conways', () => {
       ));
     });
   });
+
+  describe('performance', () => {
+
+    test.only('tick time', () => {
+      global.width = 50;
+      global.height = 50;
+
+      game({
+        width: global.width,
+        height: global.height
+      });
+
+      const times = []
+      const iterations = 10;
+
+      let before;
+      let after;
+      for(let i = 0; i < iterations; i++) {
+        before = performance.now();
+        global.tick();
+        after = performance.now();
+        times.push(Math.round(after - before));  
+      }
+
+      const fps = times
+        .map(t => 1000 / t)
+        .reduce((acc, fps) => acc + fps, 0) / iterations;
+
+      // 80 = 7.2
+      console.log('fps: ', fps);
+      // expect(fps).toBeGreaterThan(10);
+
+      /*
+        Results at w = 50 & h = 50
+        | Iterations  | FPS   |
+        | ----------- |:-----:|
+        | 10          | 44    |
+        | 10          | 47    |
+      */
+    });
+  })
 });
