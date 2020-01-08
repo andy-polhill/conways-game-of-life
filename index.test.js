@@ -504,8 +504,8 @@ describe('conways', () => {
   describe('performance', () => {
 
     test.only('tick time', () => {
-      global.width = 50;
-      global.height = 50;
+      global.width = 400;
+      global.height = 400;
 
       game({
         width: global.width,
@@ -534,10 +534,22 @@ describe('conways', () => {
 
       /*
         Results at w = 50 & h = 50
-        | Iterations  | FPS   |
-        | ----------- |:-----:|
-        | 10          | 44    |
-        | 10          | 47    |
+        | Iterations  | Dimension | FPS   | Notes                                 |
+        | ----------- |:---------:|:-----:|:-------------------------------------:|
+        | 10          | 50        | 44    |                                       |
+        | 10          | 50        | 47    |                                       |
+        | 10          | 50        | 267   | Array.concat to Array.push            |
+        | 10          | 100       | 134   |                                       |
+        | 10          | 100       | 134   | Not using push but using typed array  |
+        | 10          | 150       | 66    |                                       |
+        | 10          | 150       | 88    |  use ~~ instead of Math.floor         |
+        | 10          | 180       | 59    |                                       |
+        | 10          | 180       | 70    | reduce repetition of simple maths                                      |
+        | 10          | 180       | 170   | reduce additional multiplication                                      |
+        | 10          | 300       | 64    | reduce additional multiplication                                      |
+        | 10          | 300       | 68    | reduce additional multiplication                                      |
+        | 10          | 300       | 127   | remove array initialisation           |
+        | 10          | 400       | 70    |                                         |
       */
     });
   })
