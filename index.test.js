@@ -503,7 +503,7 @@ describe('conways', () => {
 
   describe('performance', () => {
 
-    test.only('tick time', () => {
+    test('tick time', () => {
       global.width = 400;
       global.height = 400;
 
