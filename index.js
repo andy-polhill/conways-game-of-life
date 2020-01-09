@@ -1,4 +1,10 @@
-
+/*
+ TO TRY
+ - arrays per row
+ - WebGL
+ - WebWorker (unlikely)
+ - WebAssembly
+*/
 
 const game = ({
   width = 400,
@@ -32,60 +38,44 @@ const game = ({
   // set the initial state
   ctx.putImageData(imageData, 0, 0);
 
-  // let data = [];
-  const two_count = 255 * 2;
-  const three_count = 255 * 3;
 
+  const bits_in_row = width * 4;
+  const bits_in_height = height * 4;
+  const zero_based_width = width - 1;
+  const rows = arrayLength / bits_in_height;
+  const cols = arrayLength / bits_in_row;
 
   function loop() {
 
-    for(let i = 3; i < arrayLength; i+= 4) {
-      const row = ~~(i / (width * 4));
-      const col = (((i + 1) / 4) - 1) % width; //check this seems to complicated
-      const above = row - 1;
-      const below = row + 1;
-      const left = col - 1;
-      const right = col + 1;
-      const not_top_row = above >= 0;
-      const not_bottom_row = below < height;
-      const not_first_col = left >= 0;
-      const not_last_col = right < width;
-      const location = imageData.width * 4;
-      const left_location = left * 4;
-      const right_location = right * 4;
-      const above_location = above * location;
-      const below_location = below * location;
-      const four_cols = col * 4;
+    for(let r = 0; r < rows; r++) { //row
+      for(let c = 0; c < cols; c++) { //col
+        const i = ((c * 4) + 3) + (r * bits_in_row);
+        const not_top_row = r > 0;
+        const not_bottom_row = r < height;
+        const not_first_col = c > 0;
+        const not_last_col = c < zero_based_width;
 
+        const count =
+        ((not_top_row && not_first_col && (imageData.data[(i - bits_in_row - 4)])) ? 1 : 0) +
+        ((not_top_row && (imageData.data[(i - bits_in_row)])) ? 1 : 0) +
+        ((not_top_row && not_last_col && (imageData.data[(i - bits_in_row + 4)])) ? 1 : 0) +
+        ((not_first_col && (imageData.data[(i - 4)])) ? 1 : 0) +
+        ((not_last_col && (imageData.data[(i + 4)])) ? 1 : 0) +
+        ((not_first_col && not_bottom_row && (imageData.data[(i + bits_in_row - 4)])) ? 1 : 0) +
+        ((not_bottom_row && (imageData.data[(i + bits_in_row)])) ? 1 : 0) +
+        ((not_last_col && not_bottom_row && (imageData.data[(i + bits_in_row + 4)])) ? 1 : 0);
 
-      const count =
-       ((not_top_row && not_first_col) ? imageData.data[(above_location + left_location) + 3] : 0) + // top_left_cell
-       (not_top_row ? imageData.data[(above_location + four_cols) + 3] : 0) + // top_cell
-       ((not_top_row && not_last_col) ? imageData.data[(above_location + right_location) + 3] : 0) + // top_right_cell
-       (not_first_col ? imageData.data[((row * location) + left_location) + 3] : 0) + // left_cell
-       (not_last_col ? imageData.data[((row * location) + right_location) + 3] : 0) +  // right_cell
-       ((not_bottom_row && not_first_col) ? imageData.data[(below_location + left_location) + 3] : 0) + // bottom_left_cell
-       (not_bottom_row ? imageData.data[(below_location + four_cols) + 3] : 0) + // bottom_cell
-       ((not_bottom_row && not_last_col) ? imageData.data[(below_location + right_location) + 3] : 0) // bottom_right_cell
-
-      // data[i - 3] = 0;
-      // data[i - 2] = 0;
-      // data[i - 1] = 0; 
-
-      if ((count === three_count) || (count === two_count && imageData.data[i] === 255)) {
-        // console.log('survived 🐛');
-        data[i] = 255
-        // data.push(0, 0, 0, 255);
-      } 
-      else {
-        data[i] = 0
-        // console.log('died 🐛');
-        // data.push(0, 0, 0, 0);
+        if ((count === 3) || (count === 2 && imageData.data[i] === 255)) {
+          data[i] = 255
+        } 
+        else {
+          data[i] = 0
+        }
+  
       }
     }
 
-    // imageData.data = data;
-
+    // do we need this loop
     for(let i = 0, l = data.length; i < l; i++) { //
       imageData.data[i] = data[i];
     }
@@ -106,6 +96,138 @@ if  (typeof module !== 'undefined') {
 }
 
 
+
+
+
+        // const count =
+        // (imageData.data[(i - four_widths - 4)] && is_top_row && is_first_col && 1 || 0) +
+        // (imageData.data[(i - four_widths)] && is_top_row && 1 || 0) +
+        // (imageData.data[(i - four_widths + 4)] && is_top_row && is_last_col && 1 || 0) +
+        // (imageData.data[(i - 4)] && is_first_col && 1 || 0) +
+        // (imageData.data[(i + 4)] && is_last_col && 1 || 0) +
+        // (imageData.data[(i + four_widths - 4)] && is_first_col && is_bottom_row && 1 || 0) +
+        // (imageData.data[(i + four_widths)] && is_bottom_row && 1 || 0) +
+        // (imageData.data[(i + four_widths + 4)] && is_last_col && is_bottom_row && 1 || 0);
+
+        // console.log(`
+        //   r ${r} 
+        //   c ${c}
+        //   i ${i}
+        //   count: ${count}
+        //   ${(not_top_row && not_first_col && (imageData.data[(i - four_widths - 4)] && 1) || 0)}
+        //   ${(not_top_row && (imageData.data[(i - four_widths)] && 1) || 0)}
+        //   ${(not_top_row && not_last_col && (imageData.data[(i - four_widths + 4)] && 1) || 0)}
+        //   --
+        //   ${not_first_col && (imageData.data[(i - 4)] && 1 || 0)}
+        //   ${not_last_col && (imageData.data[(i + 4)] && 1 || 0)}
+        //   --
+        //   ${not_first_col && not_bottom_row && (imageData.data[(i + four_widths - 4)] && 1 || 0)}
+        //   ${not_bottom_row && (imageData.data[(i + four_widths)] && 1 || 0)}
+        //   ${not_last_col && not_bottom_row && (imageData.data[(i + four_widths + 4)] && 1 || 0)};
+        //   `)
+
+
+    // for(let i = 3; i < arrayLength; i+= 4) {
+    //   // const row = ~~(i / (width * 4));
+    //   // const col = (((i + 1) / 4) - 1) % width; //check this seems to complicated
+    //   // const above = row - 1;
+    //   // const below = row + 1;
+    //   // const left = col - 1;
+    //   // const right = col + 1;
+    //   // const not_top_row = above >= 0;
+    //   // const not_bottom_row = below < height;
+    //   // const not_first_col = left >= 0;
+    //   // const not_last_col = right < width;
+    //   // const location = imageData.width * 4;
+    //   // const left_location = left * 4;
+    //   // const right_location = right * 4;
+    //   // const above_location = above * location;
+    //   // const below_location = below * location;
+    //   // const four_cols = col * 4;
+
+    //   // let mask; // 0 0 0 0 0 0 0 0
+
+    //   // const count2 = 
+    //   //   imageData.data[(i - (width * 4) - 4)] +
+    //   //   imageData.data[(i - (width * 4))] +
+    //   //   imageData.data[(i - (width * 4) + 4)] +
+    //   //   imageData.data[(i - 4)] +
+    //   //   imageData.data[(i + 4)] +
+    //   //   imageData.data[(i + (width * 4) - 4)] +
+    //   //   imageData.data[(i + (width * 4))] +
+    //   //   imageData.data[(i + (width * 4) + 4)];
+
+    //   //   const tl = imageData.data[(i - (width * 4) - 4)] && 1 || 0;
+    //   //   const t = imageData.data[(i - (width * 4))] && 1 || 0;
+    //   //   const tr = imageData.data[(i - (width * 4) + 4)] && 1 || 0;
+    //   //   const l = imageData.data[(i - 4)] && 1 || 0;
+    //   //   const r = imageData.data[(i + 4)] && 1 || 0;
+    //   //   const bl = imageData.data[(i + (width * 4) - 4)] && 1 || 0;
+    //   //   const b = imageData.data[(i + (width * 4))] && 1 || 0;
+    //   //   const br = imageData.data[(i + (width * 4) + 4)] && 1 || 0;
+
+    //   //   const mask = tl | t | tr | l | r | bl | b | br;
+
+    //     // console.log('MASK2: ', tl, t, tr, l, r, bl, b, br)
+    //     // console.log('|MASK: ', tl | t | tr | l | r | bl | b | br)
+    //     // console.log('&MASK2: ', tl & t & tr & l & r & bl & b & br)
+
+    //     const count =
+    //       (imageData.data[(i - (width * 4) - 4)] && 1 || 0) +
+    //       (imageData.data[(i - (width * 4))] && 1 || 0) +
+    //       (imageData.data[(i - (width * 4) + 4)] && 1 || 0) +
+    //       (imageData.data[(i - 4)] && 1 || 0) +
+    //       (imageData.data[(i + 4)] && 1 || 0) +
+    //       (imageData.data[(i + (width * 4) - 4)] && 1 || 0) +
+    //       (imageData.data[(i + (width * 4))] && 1 || 0) +
+    //       (imageData.data[(i + (width * 4) + 4)] && 1 || 0);
+
+    //   // console.log(`
+    //   //   i: ${i}
+    //   //   cell: ${(i + 1) / 4}
+    //   //   count: ${count}
+    //   //   ${(imageData.data[(i - (width * 4) - 4)] && 1 || 0)}
+    //   //   ${(imageData.data[(i - (width * 4))] && 1 || 0)}
+    //   //   ${(imageData.data[(i - (width * 4) + 4)] && 1 || 0)}
+    //   //   --
+    //   //   ${(imageData.data[(i - 4)] && 1 || 0)}
+    //   //   ${(imageData.data[(i + 4)] && 1 || 0)}
+    //   //   --
+    //   //   ${(imageData.data[(i + (width * 4) - 4)] && 1 || 0)}
+    //   //   ${(imageData.data[(i + (width * 4))] && 1 || 0)}
+    //   //   ${(imageData.data[(i + (width * 4) + 4)] && 1 || 0)}
+    //   // `)
+
+
+    //   // const count =
+    //   //  ((not_top_row && not_first_col) ? imageData.data[(above_location + left_location) + 3] : 0) + // top_left_cell
+    //   //  (not_top_row ? imageData.data[(above_location + four_cols) + 3] : 0) + // top_cell
+    //   //  ((not_top_row && not_last_col) ? imageData.data[(above_location + right_location) + 3] : 0) + // top_right_cell
+    //   //  (not_first_col ? imageData.data[((row * location) + left_location) + 3] : 0) + // left_cell
+    //   //  (not_last_col ? imageData.data[((row * location) + right_location) + 3] : 0) +  // right_cell
+    //   //  ((not_bottom_row && not_first_col) ? imageData.data[(below_location + left_location) + 3] : 0) + // bottom_left_cell
+    //   //  (not_bottom_row ? imageData.data[(below_location + four_cols) + 3] : 0) + // bottom_cell
+    //   //  ((not_bottom_row && not_last_col) ? imageData.data[(below_location + right_location) + 3] : 0) // bottom_right_cell
+
+    //   // console.log(`count: ${count}, count2: ${count2}`)
+
+    //   // data[i - 3] = 0;
+    //   // data[i - 2] = 0;
+    //   // data[i - 1] = 0; 
+
+    //   if ((count === 3) || (count === 2 && imageData.data[i] === 255)) {
+    //     // console.log('survived 🐛');
+    //     data[i] = 255
+    //     // data.push(0, 0, 0, 255);
+    //   } 
+    //   else {
+    //     data[i] = 0
+    //     // console.log('died 🐛');
+    //     // data.push(0, 0, 0, 0);
+    //   }
+    // }
+
+    // imageData.data = data;
 
   //  if(col === 1 && row === 1) {
   //   console.log(
