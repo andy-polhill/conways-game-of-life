@@ -504,8 +504,8 @@ describe('conways', () => {
   describe('performance', () => {
 
     test('tick time', () => {
-      global.width = 450;
-      global.height = 450;
+      global.width = 650;
+      global.height = 650;
 
       game({
         width: global.width,
@@ -551,7 +551,10 @@ describe('conways', () => {
         | 10          | 300       | 127   | remove array initialisation           |
         | 10          | 400       | 70    |                                         |
         | 10          | 400       | 76    | cache imageData.data to another var                                         |
-        | 10          | 400       | 76    |                                        |
+        | 10          | 450       | 62    |                                        |
+        | 10          | 450       | 124   | remove duplicate loop by doing slice at start |
+        | 10          | 600       | 63   |  |
+        | 10          | 650       | 60   | More maths reduction  |
         */
     });
   })

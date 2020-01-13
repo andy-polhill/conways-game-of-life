@@ -9,8 +9,8 @@
 */
 
 const game = ({
-  width = 400,
-  height = 400,
+  width = 650,
+  height = 650,
   data
 }) => {
 
@@ -49,6 +49,7 @@ const game = ({
 
   // let prev = new Uint8ClampedArray(imageData.data.length);
   function loop() {
+    const image_data = imageData.data.slice(0);
 
     for(let r = 0; r < rows; r++) { //row
       for(let c = 0; c < cols; c++) { //col
@@ -57,41 +58,21 @@ const game = ({
         const not_bottom_row = r < height;
         const not_first_col = c > 0;
         const not_last_col = c < zero_based_width;
-        const image_data = imageData.data;
+        const prev_bit = i - 4;
+        const next_bit = i + 4;
 
         const count =
-        ((not_top_row && not_first_col && (image_data[(i - bits_in_row - 4)])) ? 1 : 0) +
+        ((not_top_row && not_first_col && (image_data[(prev_bit - bits_in_row)])) ? 1 : 0) +
         ((not_top_row && (image_data[(i - bits_in_row)])) ? 1 : 0) +
-        ((not_top_row && not_last_col && (image_data[(i - bits_in_row + 4)])) ? 1 : 0) +
-        ((not_first_col && (image_data[(i - 4)])) ? 1 : 0) +
-        ((not_last_col && (image_data[(i + 4)])) ? 1 : 0) +
-        ((not_first_col && not_bottom_row && (image_data[(i + bits_in_row - 4)])) ? 1 : 0) +
+        ((not_top_row && not_last_col && (image_data[(next_bit - bits_in_row )])) ? 1 : 0) +
+        ((not_first_col && (image_data[(prev_bit)])) ? 1 : 0) +
+        ((not_last_col && (image_data[(next_bit)])) ? 1 : 0) +
+        ((not_first_col && not_bottom_row && (image_data[(prev_bit + bits_in_row)])) ? 1 : 0) +
         ((not_bottom_row && (image_data[(i + bits_in_row)])) ? 1 : 0) +
-        ((not_last_col && not_bottom_row && (image_data[(i + bits_in_row + 4)])) ? 1 : 0);
+        ((not_last_col && not_bottom_row && (image_data[(next_bit + bits_in_row)])) ? 1 : 0);
 
-        // const count =
-        // ((not_top_row && not_first_col && (image_data[(i - bits_in_row - 4)])) ? 1 : 0) +
-        // ((not_top_row && (image_data[(i - bits_in_row)])) ? 1 : 0) +
-        // ((not_top_row && not_last_col && (image_data[(i - bits_in_row + 4)])) ? 1 : 0) +
-        // ((not_first_col && (image_data[(i - 4)])) ? 1 : 0) +
-        // ((not_last_col && (image_data[(i + 4)])) ? 1 : 0) +
-        // ((not_first_col && not_bottom_row && (image_data[(i + bits_in_row - 4)])) ? 1 : 0) +
-        // ((not_bottom_row && (image_data[(i + bits_in_row)])) ? 1 : 0) +
-        // ((not_last_col && not_bottom_row && (image_data[(i + bits_in_row + 4)])) ? 1 : 0);
-
-        if (count === 3 || (count === 2 && image_data[i] === 255)) {
-          data[i] = 255
-        } 
-        else {
-          data[i] = 0
-        }
-  
+        imageData.data[i] = (count === 3 || (count === 2 && image_data[i])) ? 255 : 0;
       }
-    }
-
-    // do we need this loop
-    for(let i = 0, l = data.length; i < l; i++) { //
-      imageData.data[i] = data[i];
     }
 
     ctx.putImageData(imageData, 0, 0);
