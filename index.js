@@ -71,6 +71,7 @@ const game = ({
         ((not_bottom_row && (image_data[(i + bits_in_row)])) ? 1 : 0) +
         ((not_last_col && not_bottom_row && (image_data[(next_bit + bits_in_row)])) ? 1 : 0);
 
+        imageData.data[i - 2] = 200;
         imageData.data[i] = (count === 3 || (count === 2 && image_data[i])) ? 255 : 0;
       }
     }
