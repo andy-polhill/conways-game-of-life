@@ -1,57 +1,92 @@
-const width = 400;
-const diameter = 2;
+const game = ({
+  width = 800, // pixels
+  height = 800, // pixels
+  cell_width = 2, // pixels
+  data = []
+}) => {
 
-const canvas = document.getElementById('game');
-canvas.width = width;
-canvas.height = width;
-const ctx = canvas.getContext('2d');
+  const cell_height = cell_width;
+  const rows = height / cell_width;
+  const cols = width / cell_height;
+  
+  const bits_in_pixel = 4;
+  const bits_in_row = width * bits_in_pixel;
+  const bits_to_next_marker = bits_in_pixel * cell_width;
 
-const off_screen = document.createElement('canvas');
-off_screen.width = width;
-off_screen.height = width;
-const plotter = off_screen.getContext('2d');
+  const canvas = document.getElementById('game');
+  canvas.width = width;
+  canvas.height = height;
 
-let cells = Array
-.from({ length: width / diameter })
-.map(() => Array.from({ length: width / diameter })
-.map(() => Math.round(Math.random())));
+  const ctx = canvas.getContext('2d');
 
-function main() {
-  plotter.clearRect(0, 0, width, width);
-  let next_cells = new Array(width / diameter);
+  // TODO: rename this
+  const image_data = ctx.getImageData(0, 0, width, height)
 
-  for(let x = 0; x < cells.length; x++) { 
-    let row = cells[x];
-    for(let y = 0; y < row.length; y++) {
-      const cell = cells[x][y];
-      let count =
-      ((cells[x - 1] && cells[x - 1][y - 1]) ? cells[x - 1][y - 1] : 0) +
-      ((cells[x - 1] && cells[x - 1][y]) ? cells[x - 1][y] : 0) +
-      ((cells[x - 1] && cells[x - 1][y + 1]) ? cells[x - 1][y + 1] : 0) +
-      ((cells[x] && cells[x][y - 1]) ? cells[x][y - 1] : 0) +
-      ((cells[x] && cells[x][y + 1]) ? cells[x][y + 1] : 0) +
-      ((cells[x + 1] && cells[x + 1][y - 1]) ? cells[x + 1][y - 1] : 0) +
-      ((cells[x + 1] && cells[x + 1][y]) ? cells[x + 1][y] : 0) +
-      ((cells[x + 1] && cells[x + 1][y + 1]) ? cells[x + 1][y + 1] : 0);
-
-      if(!next_cells[x]) next_cells[x] = new Array(width / diameter);
-
-      if((cell === 1 && (count === 3 || count === 2)) || (cell === 0 && count === 3)) {
-        plotter.fillStyle = '#1cb500';
-        plotter.fillRect(x * diameter, y * diameter, diameter, diameter);  
-        next_cells[x][y] = 1;
-      } else {
-        next_cells[x][y] = 0;
+  if (typeof data === 'undefined' || !data.length) {
+    for(let r = 0; r < rows; r++) { //row
+      for(let c = 0; c < cols; c++) { //col
+        const i = ((c * 4 * cell_width) + 3) + (r * bits_in_row * cell_height);
+        const alpha = Math.round(Math.random()) === 1 ? 255 : 0;
+        for(let h = 0; h < cell_width; h++) {
+          for(let v = 0; v < cell_height; v++) {
+            data[i + (h * 4) + (v * bits_in_row)] = alpha;
+          }
+        }
       }
     }
   }
 
-  // var imageData = plotter.getImageData(0, 0, canvas.width, canvas.height);
-  ctx.clearRect(0, 0, width, width);
-  ctx.drawImage(off_screen, 0, 0);
-  cells = next_cells;
-  requestAnimationFrame(main);
+  for(let i = 0; i < data.length; i++) {
+    image_data.data[i] = data[i];
+  }
+
+  ctx.putImageData(image_data, 0, 0);
+
+  function loop() {
+    const prev_data = image_data.data.slice(0);
+
+    for(let r = 0; r < rows; r++) { //row
+      for(let c = 0; c < cols; c++) { //col
+        const i = 3 + 
+          (c * bits_in_pixel * cell_width) + 
+          (r * bits_in_row * cell_width);
+
+        const not_top_row = r > 0;
+        const not_bottom_row = r < rows - 1;
+        const not_first_col = c > 0;
+        const not_last_col = c < cols - 1;
+        const prev_bit = i - bits_to_next_marker;
+        const next_bit = i + bits_to_next_marker;
+
+        const count =
+          ((not_top_row && not_first_col && (prev_data[(prev_bit - bits_in_row)])) ? 1 : 0) +
+          ((not_top_row && (prev_data[(i - bits_in_row)])) ? 1 : 0) +
+          ((not_top_row && not_last_col && (prev_data[(next_bit - bits_in_row )])) ? 1 : 0) +
+          ((not_first_col && (prev_data[prev_bit])) ? 1 : 0) +
+          ((not_last_col && (prev_data[next_bit])) ? 1 : 0) +
+          ((not_first_col && not_bottom_row && (prev_data[(i + (bits_in_row * cell_height) - bits_to_next_marker)])) ? 1 : 0) +
+          ((not_bottom_row && (prev_data[(i + (bits_in_row * cell_height))])) ? 1 : 0) +
+          ((not_last_col && not_bottom_row && (prev_data[(i + (bits_in_row * cell_height) + bits_to_next_marker)])) ? 1 : 0)
+
+        const alpha = (count === 3 || (count === 2 && prev_data[i])) ? 255 : 0;
+
+        for(let h = 0; h < cell_width; h++) {
+          for(let v = 0; v < cell_height; v++) {
+            image_data.data[i + (h * 4) + (v * bits_in_row)] = alpha;
+          }
+        }
+      }
+    }
+
+    ctx.putImageData(image_data, 0, 0);
+    requestAnimationFrame(loop); 
+  }
+
+  requestAnimationFrame(loop);
 }
 
-// Start things off
-requestAnimationFrame(main);
+if  (typeof module !== 'undefined') {
+  module.exports = { game }
+} else {
+  game({});
+}
