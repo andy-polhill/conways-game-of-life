@@ -1,15 +1,39 @@
 const { game } = require('./index');
 const { createCanvas } = require('canvas');
 
-const expand = str => {
-  return str
+const expand = (str, {
+  cols,// = 2,
+  rows,// = 2,
+  cell_width = 2,
+  cell_height = 2
+}) => {
+
+  const pixels_in_cell = cell_width * cell_height;
+  const bits_in_pixel = 4;
+  const bits_in_cell = pixels_in_cell * bits_in_pixel;
+  const bits_in_picture = bits_in_cell * rows * cols;
+  const pixels_in_row = cols * cell_width;
+  const bits_in_row = bits_in_pixel * pixels_in_row;
+  const data = new Array(bits_in_picture);
+
+  const simplified = str
     .replace(/\s/g, '')
     .replace(/🔵/g, 1)
     .replace(/⚪️/g, 0)
-    .split('')
-    .reduce((arr, i) => {
-      return arr.concat([0, 0, 0, i == 1 ? 255 : 0])
-    }, []);
+    .split('');
+
+  for(let i = 3; i < bits_in_picture; i += bits_in_pixel) {
+    const row = Math.floor((i / bits_in_row) / cell_height);
+    const col = Math.floor((((i + 1 - 4) % bits_in_row) / 4) / 2);
+    const loc = (row * cols) + col;
+
+    data[i - 3] = 0;
+    data[i - 2] = 0;
+    data[i - 1] = 0;
+    data[i] = simplified[loc] === '1' ? 255 : 0;
+  }
+
+  return data;
 }
 
 const contract = (arr, width) => {
@@ -57,11 +81,78 @@ describe('expand', () => {
     expect(expand(`
       ⚪️🔵
       ⚪️🔵
-    `)).toEqual([
-      0, 0, 0, 0, 
+    `, { rows: 2, cols: 2 })).toEqual([
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 255,
       0, 0, 0, 255,
       0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 255,
+      0, 0, 0, 255,
+
+      0, 0, 0, 0, //next row
+      0, 0, 0, 0,
+      0, 0, 0, 255,
+      0, 0, 0, 255,
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 255,
       0, 0, 0, 255
+    ])
+
+  //   console.log(expand(`
+  //   ⚪️⚪️⚪️
+  //   🔵🔵🔵
+  //   ⚪️⚪️⚪️
+  // `, { rows: 3, cols: 3 }));
+
+    expect(expand(`
+      ⚪️⚪️⚪️
+      🔵🔵🔵
+      ⚪️⚪️⚪️
+    `, { rows: 3, cols: 3 })).toEqual([
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      //next row 
+      0, 0, 0, 255,
+      0, 0, 0, 255,
+      0, 0, 0, 255,
+      0, 0, 0, 255,
+      0, 0, 0, 255,
+      0, 0, 0, 255,
+
+      0, 0, 0, 255,
+      0, 0, 0, 255,
+      0, 0, 0, 255,
+      0, 0, 0, 255,
+      0, 0, 0, 255,
+      0, 0, 0, 255,
+      //next row
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0,
     ])
   })
 });
@@ -82,42 +173,86 @@ describe('conways', () => {
   describe('rules', () => {
 
     test('any live cell with fewer than two live neighbours dies', () => {
-      global.width = 3;
-      global.height = 3;
+      const rows = 3;
+      const cols = 3;
+      const cell_width = 2;
+      const cell_height = 2;
+
+      global.width = rows * cell_width;
+      global.height = cols * cell_height;
 
       game({
         width: global.width,
         height: global.height,
+        cell_width: 2,
         data: expand(`
           ⚪⚪⚪
           ⚪🔵⚪
           ⚪⚪⚪
-        `)
+        `, { rows, cols })
       });
 
       global.tick();
       const ctx = document.getElementById('game').getContext('2d');
+
       expect(ctx.getImageData(0, 0, global.width, global.height).data).toEqual(
         new Uint8ClampedArray(expand(`
           ⚪⚪⚪
           ⚪⚪⚪
           ⚪⚪⚪
-        `)
+        `, { rows, cols })
       ));
+
     });
 
-    test('any live cell with two or three live neighbours lives on', () => {
-      global.width = 3;
-      global.height = 3;
+    test('simple', () => {
+      const rows = 2;
+      const cols = 2;
+      const cell_width = 2;
+      const cell_height = 2;
+
+      global.width = rows * cell_width;
+      global.height = cols * cell_height;
 
       game({
         width: global.width,
         height: global.height,
+        cell_width: 2,
+        data: expand(`
+          ⚪🔵
+          🔵⚪
+        `, { rows, cols })
+      });
+
+      global.tick();
+      const ctx = document.getElementById('game').getContext('2d');
+
+      expect(ctx.getImageData(0, 0, global.width, global.height).data).toEqual(
+        new Uint8ClampedArray(expand(`
+          ⚪⚪
+          ⚪⚪
+        `, { rows, cols })
+      ));
+    })
+
+    test('any live cell with two or three live neighbours lives on', () => {
+      const rows = 3;
+      const cols = 3;
+      const cell_width = 2;
+      const cell_height = 2;
+
+      global.width = rows * cell_width;
+      global.height = cols * cell_height;
+
+      game({
+        width: global.width,
+        height: global.height,
+        cell_width: 2,
         data: expand(`
           ⚪⚪⚪
           🔵🔵🔵
           ⚪⚪⚪
-        `)
+        `, { rows, cols })
       });
 
       global.tick();
@@ -128,22 +263,28 @@ describe('conways', () => {
           ⚪🔵⚪
           ⚪🔵⚪
           ⚪🔵⚪
-        `)
+        `, { rows, cols })
       ));
     })
 
     test('any live cell with more than three live neighbours dies', () => {
-      global.width = 3;
-      global.height = 3;
+      const rows = 3;
+      const cols = 3;
+      const cell_width = 2;
+      const cell_height = 2;
+
+      global.width = rows * cell_width;
+      global.height = cols * cell_height;
 
       game({
         width: global.width,
         height: global.height,
+        cell_width: 2,
         data: expand(`
           ⚪🔵⚪
           🔵🔵🔵
           ⚪🔵⚪
-        `)
+        `, { rows, cols })
       });
 
       global.tick();
@@ -153,13 +294,18 @@ describe('conways', () => {
           🔵🔵🔵
           🔵⚪🔵
           🔵🔵🔵
-        `)
+        `, { rows, cols })
       ));
     })
 
     test('dead cell with exactly three live neighbours becomes a live cell', () => {
-      global.width = 3;
-      global.height = 3;
+      const rows = 3;
+      const cols = 3;
+      const cell_width = 2;
+      const cell_height = 2;
+
+      global.width = rows * cell_width;
+      global.height = cols * cell_height;
 
       game({
         width: global.width,
@@ -168,7 +314,7 @@ describe('conways', () => {
           ⚪🔵⚪
           ⚪🔵⚪
           ⚪🔵⚪
-        `)
+        `, { rows, cols })
       });
 
       global.tick();
@@ -178,15 +324,20 @@ describe('conways', () => {
           ⚪⚪⚪
           🔵🔵🔵
           ⚪⚪⚪
-        `)
+        `, { rows, cols })
       ));
     })
   });
 
   describe('still life', () => {
     test('block', () => {
-      global.width = 4;
-      global.height = 4;
+      const rows = 4;
+      const cols = 4;
+      const cell_width = 2;
+      const cell_height = 2;
+
+      global.width = rows * cell_width;
+      global.height = cols * cell_height;
 
       game({
         width: global.width,
@@ -196,7 +347,7 @@ describe('conways', () => {
           ⚪🔵🔵⚪
           ⚪🔵🔵⚪
           ⚪⚪⚪⚪
-        `)
+        `, { rows, cols })
       });
 
       global.tick();
@@ -207,13 +358,18 @@ describe('conways', () => {
           ⚪🔵🔵⚪
           ⚪🔵🔵⚪
           ⚪⚪⚪⚪
-        `)
+        `, { rows, cols })
       ));
     });
   
     test('beehive', () => {
-      global.width = 6;
-      global.height = 5;
+      const rows = 6;
+      const cols = 6;
+      const cell_width = 2;
+      const cell_height = 2;
+
+      global.width = rows * cell_width;
+      global.height = cols * cell_height;
 
       game({
         width: global.width,
@@ -224,7 +380,8 @@ describe('conways', () => {
           ⚪🔵⚪⚪🔵⚪
           ⚪⚪🔵🔵⚪⚪
           ⚪⚪⚪⚪⚪⚪
-        `)
+          ⚪⚪⚪⚪⚪⚪
+        `, { rows, cols })
       });
   
       global.tick();
@@ -236,13 +393,19 @@ describe('conways', () => {
           ⚪🔵⚪⚪🔵⚪
           ⚪⚪🔵🔵⚪⚪
           ⚪⚪⚪⚪⚪⚪
-      `)
+          ⚪⚪⚪⚪⚪⚪
+          `, { rows, cols })
       ));
     });
 
     test('loaf', () => {
-      global.width = 6;
-      global.height = 6;
+      const rows = 6;
+      const cols = 6;
+      const cell_width = 2;
+      const cell_height = 2;
+
+      global.width = rows * cell_width;
+      global.height = cols * cell_height;
 
       game({
         width: global.width,
@@ -254,7 +417,7 @@ describe('conways', () => {
           ⚪⚪🔵⚪🔵⚪
           ⚪⚪⚪🔵⚪⚪
           ⚪⚪⚪⚪⚪⚪
-        `)
+        `, { rows, cols })
       });
   
       global.tick();
@@ -267,13 +430,18 @@ describe('conways', () => {
           ⚪⚪🔵⚪🔵⚪
           ⚪⚪⚪🔵⚪⚪
           ⚪⚪⚪⚪⚪⚪
-      `)
+      `, { rows, cols })
       ));
     });
 
     test('boat', () => {
-      global.width = 5;
-      global.height = 5;
+      const rows = 5;
+      const cols = 5;
+      const cell_width = 2;
+      const cell_height = 2;
+
+      global.width = rows * cell_width;
+      global.height = cols * cell_height;
 
       game({
         width: global.width,
@@ -284,7 +452,7 @@ describe('conways', () => {
           ⚪🔵⚪🔵⚪
           ⚪⚪🔵⚪⚪
           ⚪⚪⚪⚪⚪
-        `)
+        `, { rows, cols })
       });
   
       global.tick();
@@ -296,13 +464,18 @@ describe('conways', () => {
           ⚪🔵⚪🔵⚪
           ⚪⚪🔵⚪⚪
           ⚪⚪⚪⚪⚪
-      `)
+      `, { rows, cols })
       ));
     });
 
     test('tub', () => {
-      global.width = 5;
-      global.height = 5;
+      const rows = 5;
+      const cols = 5;
+      const cell_width = 2;
+      const cell_height = 2;
+
+      global.width = rows * cell_width;
+      global.height = cols * cell_height;
 
       game({
         width: global.width,
@@ -313,7 +486,7 @@ describe('conways', () => {
           ⚪🔵⚪🔵⚪
           ⚪⚪🔵⚪⚪
           ⚪⚪⚪⚪⚪
-        `)
+        `, { rows, cols })
       });
 
       global.tick();
@@ -325,7 +498,7 @@ describe('conways', () => {
           ⚪🔵⚪🔵⚪
           ⚪⚪🔵⚪⚪
           ⚪⚪⚪⚪⚪
-      `)
+      `, { rows, cols })
       ));
     });
   });
@@ -333,8 +506,13 @@ describe('conways', () => {
   describe('oscillators', () => {
 
     test('blinker', () => {
-      global.width = 5;
-      global.height = 5;
+      const rows = 5;
+      const cols = 5;
+      const cell_width = 2;
+      const cell_height = 2;
+
+      global.width = rows * cell_width;
+      global.height = cols * cell_height;
 
       game({
         width: global.width,
@@ -345,7 +523,7 @@ describe('conways', () => {
           ⚪⚪🔵⚪⚪
           ⚪⚪🔵⚪⚪
           ⚪⚪⚪⚪⚪
-        `)
+        `, { rows, cols })
       });
 
       global.tick();
@@ -357,7 +535,7 @@ describe('conways', () => {
           ⚪🔵🔵🔵⚪
           ⚪⚪⚪⚪⚪
           ⚪⚪⚪⚪⚪
-        `)
+        `, { rows, cols })
       ));
 
       global.tick();
@@ -368,13 +546,18 @@ describe('conways', () => {
           ⚪⚪🔵⚪⚪
           ⚪⚪🔵⚪⚪
           ⚪⚪⚪⚪⚪
-        `)
+        `, { rows, cols })
       ));
     });
 
     test('toad', () => {
-      global.width = 6;
-      global.height = 6;
+      const rows = 6;
+      const cols = 6;
+      const cell_width = 2;
+      const cell_height = 2;
+
+      global.width = rows * cell_width;
+      global.height = cols * cell_height;
 
       game({
         width: global.width,
@@ -386,7 +569,7 @@ describe('conways', () => {
           ⚪🔵⚪⚪🔵⚪
           ⚪⚪🔵⚪⚪⚪
           ⚪⚪⚪⚪⚪⚪
-        `)
+        `, { rows, cols })
       });
 
       global.tick();
@@ -399,7 +582,7 @@ describe('conways', () => {
           ⚪🔵🔵🔵⚪⚪
           ⚪⚪⚪⚪⚪⚪
           ⚪⚪⚪⚪⚪⚪
-        `)
+        `, { rows, cols })
       ));
 
       global.tick();
@@ -411,13 +594,18 @@ describe('conways', () => {
           ⚪🔵⚪⚪🔵⚪
           ⚪⚪🔵⚪⚪⚪
           ⚪⚪⚪⚪⚪⚪
-        `)
+        `, { rows, cols })
       ));
     });
 
     test('beacon', () => {
-      global.width = 6;
-      global.height = 6;
+      const rows = 6;
+      const cols = 6;
+      const cell_width = 2;
+      const cell_height = 2;
+
+      global.width = rows * cell_width;
+      global.height = cols * cell_height;
 
       game({
         width: global.width,
@@ -429,7 +617,7 @@ describe('conways', () => {
           ⚪⚪⚪🔵🔵⚪
           ⚪⚪⚪🔵🔵⚪
           ⚪⚪⚪⚪⚪⚪
-        `)
+        `, { rows, cols })
       });
 
       global.tick();
@@ -442,7 +630,7 @@ describe('conways', () => {
           ⚪⚪⚪⚪🔵⚪
           ⚪⚪⚪🔵🔵⚪
           ⚪⚪⚪⚪⚪⚪
-        `)
+        `, { rows, cols })
       ));
 
       global.tick();
@@ -454,49 +642,54 @@ describe('conways', () => {
           ⚪⚪⚪🔵🔵⚪
           ⚪⚪⚪🔵🔵⚪
           ⚪⚪⚪⚪⚪⚪
-        `)
+        `, { cols, rows })
       ));
     });
   });
 
   describe('spaceships', () => {
-    test('glider', () => {
-      global.width = 4;
-      global.height = 5;
+    xtest('glider', () => {
+      const rows = 5;
+      const cols = 5;
+      const cell_width = 2;
+      const cell_height = 2;
+
+      global.width = rows * cell_width;
+      global.height = cols * cell_height;
 
       game({
         width: global.width,
         height: global.height,
         data: expand(`
-          ⚪🔵⚪⚪
-          ⚪⚪🔵⚪
-          🔵🔵🔵⚪
-          ⚪⚪⚪⚪
-          ⚪⚪⚪⚪
-        `)
+          ⚪🔵⚪⚪⚪
+          ⚪⚪🔵⚪⚪
+          🔵🔵🔵⚪⚪
+          ⚪⚪⚪⚪⚪
+          ⚪⚪⚪⚪⚪
+        `, { rows, cols })
       });
 
       global.tick();
       const ctx = document.getElementById('game').getContext('2d');
       expect(ctx.getImageData(0, 0, global.width, global.height).data).toEqual(
         new Uint8ClampedArray(expand(`
-          ⚪⚪⚪⚪
-          🔵⚪🔵⚪
-          ⚪🔵🔵⚪
-          ⚪🔵⚪⚪
-          ⚪⚪⚪⚪
-        `)
+          ⚪⚪⚪⚪⚪
+          🔵⚪⚪🔵⚪
+          ⚪🔵🔵⚪⚪
+          ⚪🔵⚪⚪⚪
+          ⚪⚪⚪⚪⚪
+        `, { rows, cols })
       ));
 
       global.tick();
       expect(ctx.getImageData(0, 0, global.width, global.height).data).toEqual(
         new Uint8ClampedArray(expand(`
-          ⚪⚪⚪⚪
-          ⚪⚪🔵⚪
-          🔵⚪🔵⚪
-          ⚪🔵🔵⚪
-          ⚪⚪⚪⚪
-        `)
+          ⚪⚪⚪⚪⚪
+          ⚪⚪🔵⚪⚪
+          🔵⚪🔵⚪⚪
+          ⚪🔵🔵⚪⚪
+          ⚪⚪⚪⚪⚪
+        `, { rows, cols })
       ));
     });
   });
